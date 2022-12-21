@@ -9,7 +9,7 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Products')
-    .setDescription('The products API description')
+    .setDescription('The products API')
     .setVersion('1.0')
     .addBearerAuth({
       type: 'http',

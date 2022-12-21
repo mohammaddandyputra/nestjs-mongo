@@ -25,17 +25,20 @@ export class UserService {
     return users;
   }
 
-  async approvalUser(payload: IApprovalUser): Promise<any> {
+  async approvalUser(payload: any): Promise<any> {
     const { id, is_verify } = payload;
 
-    const user: any = await this.UserModel.findByIdAndUpdate(id, {
+    let message;
+    is_verify === 'true' ? (message = 'accepted') : (message = 'rejected');
+
+    const data: any = await this.UserModel.findByIdAndUpdate(id, {
       $set: { is_verify },
     });
 
-    if (!user) {
+    if (!data) {
       throw new HttpException('User not found', 404);
     }
 
-    return user;
+    return { message, data };
   }
 }

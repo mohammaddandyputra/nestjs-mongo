@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsEnum, IsNotEmpty, IsString, Min } from 'class-validator';
+import { IsEmail, IsEnum, IsNotEmpty, IsString } from 'class-validator';
 import { Role } from './auth.interface';
 
 export class BodyRegisterDTO {
@@ -15,7 +15,6 @@ export class BodyRegisterDTO {
 
   @IsNotEmpty()
   @IsString()
-  @Min(6)
   @ApiProperty({ description: 'Your Password' })
   password: string;
 
@@ -38,7 +37,6 @@ export class BodyLoginDTO {
 
   @IsNotEmpty()
   @IsString()
-  @Min(6)
   @ApiProperty({ description: 'Your Password' })
   password: string;
 }
@@ -56,7 +54,6 @@ export class BodyChangePasswordDTO {
 
   @IsNotEmpty()
   @IsString()
-  @Min(6)
   @ApiProperty({ description: 'New Password' })
   new_password: string;
 }

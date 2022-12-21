@@ -21,6 +21,7 @@ import { Product } from 'src/schema/product.schema';
 import {
   IApprovalWarrantyClaim,
   ICreateProduct,
+  IDeleteProduct,
   IUpdateProduct,
   IWarrantyClaim,
   statusClaim,
@@ -34,6 +35,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiConsumes,
+  ApiOperation,
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
@@ -41,8 +43,6 @@ import {
   BodyApprovalWarrantyProductDTO,
   BodyCreateProductDTO,
   BodyUpdateProductDTO,
-  ParamProductDTO,
-  ParamWarrantyProductDTO,
 } from './product.dto';
 
 export const storage = {
@@ -66,21 +66,24 @@ export class ProductController {
   private util = new Utils();
 
   // Product lists
+  @ApiOperation({ summary: 'Product Lists' })
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RoleGuard)
-  @Get('/product')
-  getProduct(@Response() res: any): Promise<Product> {
-    const data: any = this.productService.productList();
+  @Get('/products')
+  async getProduct(@Response() res: any): Promise<Product> {
+    const data: any = await this.productService.productList();
     return this.util.responseSuccess(res, 'Product lists', data, 200);
   }
 
   // Create Product
+  @ApiOperation({ summary: 'Create Product' })
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: BodyCreateProductDTO })
   @Roles('ADMIN')
   @UseGuards(JwtAuthGuard, RoleGuard)
   @UseInterceptors(FileInterceptor('file', storage))
-  @Post('/product')
+  @Post('/products')
   async postProduct(
     @Body() body: BodyCreateProductDTO,
     @Response() res: any,
@@ -101,22 +104,34 @@ export class ProductController {
   }
 
   // Update Product
+  @Patch('/products/:id')
+  @ApiOperation({ summary: 'Update Product' })
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
-  @ApiParam({ name: 'id', type: ParamProductDTO })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    type: String,
+    description: 'Product ID',
+  })
   @ApiBody({ type: BodyUpdateProductDTO })
   @Roles('ADMIN')
   @UseGuards(JwtAuthGuard, RoleGuard)
-  @Patch('/product/:id')
+  @UseInterceptors(FileInterceptor('file', storage))
   async updateProduct(
     @Body() body: BodyUpdateProductDTO,
     @Response() res: any,
-    @Param('id') id: ParamProductDTO,
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File,
   ): Promise<Product> {
     const payload: IUpdateProduct = {
       ...body,
-      ...id,
+      id,
     };
+
+    if (file) {
+      payload.file = file.filename;
+    }
 
     const data: any = await this.productService.updateProduct(payload);
     return this.util.responseSuccess(
@@ -128,15 +143,21 @@ export class ProductController {
   }
 
   // Delete Product
+  @ApiOperation({ summary: 'Delete Product' })
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
-  @ApiParam({ name: 'id', type: ParamProductDTO })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    required: true,
+    description: 'Product ID',
+  })
   @Roles('ADMIN')
   @UseGuards(JwtAuthGuard, RoleGuard)
-  @Delete('/product/:id')
+  @Delete('/products/:id')
   async deleteProduct(
     @Response() res: any,
-    @Param('id') id: ParamProductDTO,
+    @Param('id') id: IDeleteProduct,
   ): Promise<any> {
     const data: any = await this.productService.destoyProduct(id);
     return this.util.responseSuccess(
@@ -148,19 +169,25 @@ export class ProductController {
   }
 
   // Claim warranty
+  @ApiOperation({ summary: 'Claim Warranty Product' })
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
-  @ApiParam({ name: 'id', type: ParamWarrantyProductDTO })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    required: true,
+    description: 'Product ID',
+  })
   @Roles('USER')
   @UseGuards(JwtAuthGuard, RoleGuard)
-  @Post('/product/warranty/:id')
+  @Post('/products/warranty/:id')
   async warrantyClaim(
     @Response() res: any,
-    @Param('id') id: ParamWarrantyProductDTO,
+    @Param('id') id: string,
     @UserDecorator() user: any,
   ): Promise<any> {
     const payload: IWarrantyClaim = {
-      ...id,
+      product_id: id,
       status: statusClaim.PENDING,
       created_by: user.user_id,
     };
@@ -175,31 +202,40 @@ export class ProductController {
   }
 
   // Product Warranty Lists
+  @ApiOperation({ summary: 'Warranty Claim Lists' })
+  @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(JwtAuthGuard, RoleGuard)
-  @Get('/product/warranty')
+  @Get('/products/warranty')
   async getWarrantyClaim(@Response() res: any): Promise<any> {
     const data: any = await this.productService.findWarrantyClaimList();
     return this.util.responseSuccess(res, 'Warranty claim lists', data, 200);
   }
 
   // Approval Warranty Product
+  @ApiOperation({ summary: 'Approval Warranty Product' })
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
-  @ApiParam({ name: 'id', type: ParamWarrantyProductDTO })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    required: true,
+    description: 'Product ID',
+  })
   @ApiBody({ type: BodyApprovalWarrantyProductDTO })
   @Roles('ADMIN')
   @UseGuards(JwtAuthGuard, RoleGuard)
-  @Patch('/product/warranty/:id')
+  @Patch('/products/warranty/:id')
+  @UseInterceptors(FileInterceptor(''))
   async approvalWarrantyClaim(
     @Body() body: BodyApprovalWarrantyProductDTO,
     @Response() res: any,
-    @Param('id') id: ParamWarrantyProductDTO,
+    @Param('id') id: string,
     @UserDecorator() user,
   ): Promise<Product> {
     const payload: IApprovalWarrantyClaim = {
       ...body,
-      ...id,
+      id,
       claim_by: user.user_id,
       claim_at: new Date(),
     };
@@ -207,7 +243,7 @@ export class ProductController {
     const data: any = await this.productService.approvalWarrantyClaim(payload);
     return this.util.responseSuccess(
       res,
-      'Product updated successfully',
+      'Warranty status changed successfully',
       data,
       201,
     );

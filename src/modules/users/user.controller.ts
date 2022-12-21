@@ -6,6 +6,7 @@ import {
   Get,
   Param,
   Patch,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { Utils } from 'src/utils/util';
@@ -15,8 +16,16 @@ import { RoleGuard } from '../guards/role.guard';
 import { Roles } from '../guards/role.decorator';
 import { User } from 'src/schema/user.schema';
 import { IApprovalUser } from './user.interface';
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+} from '@nestjs/swagger';
 import { BodyApprovalUserDTO } from './user.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('users')
 @Controller()
@@ -25,6 +34,7 @@ export class UserController {
   private util = new Utils();
 
   // Profile User
+  @ApiOperation({ summary: 'View Own Account' })
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RoleGuard)
   @Get('/profile')
@@ -34,6 +44,7 @@ export class UserController {
   }
 
   // User Lists
+  @ApiOperation({ summary: 'User Lists' })
   @ApiBearerAuth()
   @Roles('ADMIN')
   @UseGuards(JwtAuthGuard, RoleGuard)
@@ -44,12 +55,20 @@ export class UserController {
   }
 
   // Approval User
+  @ApiOperation({ summary: 'Approval Account' })
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: BodyApprovalUserDTO })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    required: true,
+    description: 'User ID',
+  })
   @Roles('ADMIN')
   @UseGuards(JwtAuthGuard, RoleGuard)
-  @Patch('/users/reject/:id')
+  @Patch('/users/approval/:id')
+  @UseInterceptors(FileInterceptor(''))
   async approvalUser(
     @Body() body: BodyApprovalUserDTO,
     @Response() res: any,
@@ -59,10 +78,10 @@ export class UserController {
       id: user_id,
       is_verify: body.is_verify,
     };
-    const data: any = await this.userService.approvalUser(payload);
+    const { message, data }: any = await this.userService.approvalUser(payload);
     return this.util.responseSuccess(
       res,
-      'User has been successfully rejected',
+      `User has been successfully ${message}`,
       data,
       201,
     );

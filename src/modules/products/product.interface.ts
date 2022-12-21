@@ -7,6 +7,7 @@ export interface ICreateProduct {
 export interface IUpdateProduct {
   id: string;
   title: string;
+  file: string;
   is_warranty: boolean;
 }
 
@@ -21,7 +22,7 @@ export enum statusClaim {
 }
 
 export interface IWarrantyClaim {
-  id: string;
+  product_id: string;
   status: statusClaim;
   created_by: string;
 }

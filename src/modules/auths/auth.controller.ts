@@ -1,9 +1,16 @@
-import { Body, Response, Controller, Post } from '@nestjs/common';
+import {
+  Body,
+  Response,
+  Controller,
+  Post,
+  UseInterceptors,
+} from '@nestjs/common';
 import { Utils } from 'src/utils/util';
 import {
   ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
+  ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
 import { IChangePassword, ILogin, IRegistration } from './auth.interface';
@@ -14,6 +21,7 @@ import {
   BodyLoginDTO,
   BodyRegisterDTO,
 } from './auth.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('auth')
 @Controller()
@@ -22,10 +30,12 @@ export class AuthController {
   private util = new Utils();
 
   // Register Account
+  @ApiOperation({ summary: 'Register Account' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: BodyRegisterDTO })
   @Post('/register')
-  @ApiCreatedResponse({ description: 'User registration' })
+  @UseInterceptors(FileInterceptor(''))
+  @ApiCreatedResponse({ description: 'Register success' })
   async postRegister(
     @Body() body: BodyRegisterDTO,
     @Response() res: any,
@@ -39,10 +49,12 @@ export class AuthController {
   }
 
   // Login Account
+  @ApiOperation({ summary: 'Sign In Account' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: BodyLoginDTO })
   @Post('/login')
-  @ApiCreatedResponse({ description: 'Login' })
+  @UseInterceptors(FileInterceptor(''))
+  @ApiCreatedResponse({ description: 'Login success' })
   async postLogin(
     @Body() body: BodyLoginDTO,
     @Response() res: any,
@@ -55,10 +67,12 @@ export class AuthController {
   }
 
   // Change Password
+  @ApiOperation({ summary: 'Change Password Account' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: BodyChangePasswordDTO })
   @Post('/change-password')
-  @ApiCreatedResponse({ description: 'Change Password' })
+  @UseInterceptors(FileInterceptor(''))
+  @ApiCreatedResponse({ description: 'Password changed success' })
   async postChangePassword(
     @Body() body: BodyChangePasswordDTO,
     @Response() res: any,

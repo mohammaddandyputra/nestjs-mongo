@@ -14,7 +14,12 @@ export class AuthService {
   ) {}
 
   async signUp(payload: IRegistration): Promise<any> {
-    const { role } = payload;
+    const { role, email } = payload;
+
+    const user = await this.UserModel.findOne({ email });
+    if (user) {
+      throw new HttpException('Email has registered', 400);
+    }
 
     role === 'ADMIN' ? (payload.is_verify = true) : (payload.is_verify = false);
     payload.password = bcrypt.hashSync(payload.password, SALT_ROUND);

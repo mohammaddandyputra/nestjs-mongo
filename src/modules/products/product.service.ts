@@ -42,6 +42,10 @@ export class ProductService {
   async updateProduct(payload: IUpdateProduct): Promise<any> {
     const { id, ...data } = payload;
 
+    if (!payload.file) {
+      delete data.file;
+    }
+
     const product: any = await this.ProductModel.findByIdAndUpdate(id, {
       $set: data,
     });
@@ -64,11 +68,22 @@ export class ProductService {
   }
 
   async warrantyClaim(payload: IWarrantyClaim): Promise<ProductWarrantyClaim> {
-    const { id } = payload;
-    const product: any = await this.ProductModel.findById(id);
+    const { product_id, created_by } = payload;
+    const product: any = await this.ProductModel.findById(product_id);
 
     if (!product) {
       throw new HttpException('Product not found', 404);
+    }
+
+    const findWarrantyClaim: any = await this.ProductWarrantyClaimModel.findOne(
+      { product_id, created_by },
+    );
+
+    if (findWarrantyClaim) {
+      throw new HttpException(
+        'You have already filed a warranty claim on this product',
+        400,
+      );
     }
 
     if (!product.is_warranty) {
@@ -97,7 +112,7 @@ export class ProductService {
       });
 
     if (!warranty_claim) {
-      throw new HttpException('ID warranty claim not found', 404);
+      throw new HttpException('ID warranty not found', 404);
     }
 
     return warranty_claim;
