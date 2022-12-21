@@ -220,7 +220,7 @@ export class ProductController {
     name: 'id',
     type: String,
     required: true,
-    description: 'Product ID',
+    description: 'Warranty ID',
   })
   @ApiBody({ type: BodyApprovalWarrantyProductDTO })
   @Roles('ADMIN')
